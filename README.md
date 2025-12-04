@@ -1,7 +1,7 @@
 
 ---
 
-## 📋 Dataset
+##  Dataset
 
 The dataset used is **Telco Customer Churn** from Kaggle, which contains customer demographic information, account details, and service usage.  
 
@@ -11,7 +11,7 @@ The dataset used is **Telco Customer Churn** from Kaggle, which contains custome
 
 ---
 
-## 🛠 Tools and Libraries
+##  Tools and Libraries
 
 - Python 3.10  
 - Pandas, NumPy  
@@ -22,7 +22,7 @@ The dataset used is **Telco Customer Churn** from Kaggle, which contains custome
 
 ---
 
-## 🔧 Features
+##  Features
 
 The model considers features such as:  
 
@@ -33,7 +33,7 @@ The model considers features such as:
 
 ---
 
-## ⚙️ How to Run
+##  How to Run
 
 1. **Clone the repository**  
 ```bash
