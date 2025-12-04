@@ -35,9 +35,9 @@ The model considers features such as:
 
 ## 📺 App Screenshot
 
-![App Screenshot](Screenshot 2025-12-04 142632.png)
+![App Screenshot](SS1.png)
 
-![App Screenshot](Screenshot 2025-12-04 142647.png)
+![App Screenshot](SS2.png)
 
 
 ##  How to Run
