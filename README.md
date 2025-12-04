@@ -31,9 +31,10 @@ The model considers features such as:
 - Services: `PhoneService`, `InternetService`, `OnlineSecurity`  
 - Charges: `MonthlyCharges`, `TotalCharges`  
 
----
+---git pull origin main --rebase
 
-## 📺 App Screenshot
+
+##  App Screenshot
 
 ![App Screenshot](SS1.png)
 
