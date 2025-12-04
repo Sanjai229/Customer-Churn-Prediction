@@ -33,6 +33,13 @@ The model considers features such as:
 
 ---
 
+## 📺 App Screenshot
+
+![App Screenshot](Screenshot 2025-12-04 142632.png)
+
+![App Screenshot](Screenshot 2025-12-04 142647.png)
+
+
 ##  How to Run
 
 1. **Clone the repository**  
