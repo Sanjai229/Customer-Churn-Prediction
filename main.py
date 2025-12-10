@@ -1,48 +1,62 @@
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
 import joblib
 import numpy as np
+import pandas as pd
 
-# Create FastAPI app
 app = FastAPI()
 
 # Load model and scaler
-model = joblib.load("rf_churn_model.pkl")  # make sure this matches your model filename
-scaler = joblib.load("scaler.pkl")        # optional, only if you have a scaler
+model = joblib.load("rf_churn_model.pkl")
+scaler = joblib.load("scaler.pkl")  # fitted on numeric columns only
 
-# Home endpoint (GET)
+# Feature order expected by the model (after preprocessing)
+MODEL_FEATURES = [
+    'gender_Female', 'gender_Male', 'SeniorCitizen', 'Partner_No', 'Partner_Yes',
+    'Dependents_No', 'Dependents_Yes', 'tenure', 'PhoneService_No', 'PhoneService_Yes',
+    'MultipleLines_No', 'MultipleLines_Yes', 'InternetService_DSL', 'InternetService_Fiber optic',
+    'InternetService_No', 'OnlineSecurity_No', 'OnlineSecurity_Yes', 'OnlineBackup_No',
+    'OnlineBackup_Yes', 'DeviceProtection_No', 'DeviceProtection_Yes', 'TechSupport_No',
+    'TechSupport_Yes', 'StreamingTV_No', 'StreamingTV_Yes', 'StreamingMovies_No',
+    'StreamingMovies_Yes', 'Contract_Month-to-month', 'Contract_One year', 'Contract_Two year',
+    'PaperlessBilling_No', 'PaperlessBilling_Yes', 'PaymentMethod_Bank transfer',
+    'PaymentMethod_Credit card', 'PaymentMethod_Electronic check', 'PaymentMethod_Mailed check',
+    'MonthlyCharges', 'TotalCharges'
+]
+
+# Preprocess function
+def preprocess_input(data: dict):
+    # Convert categorical features to one-hot manually
+    df = pd.DataFrame([data])
+
+    # Scale numeric columns
+    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    df[numeric_cols] = scaler.transform(df[numeric_cols])
+
+    # One-hot encode categorical columns (using same names as MODEL_FEATURES)
+    df_encoded = pd.get_dummies(df)
+
+    # Ensure all expected features exist
+    for col in MODEL_FEATURES:
+        if col not in df_encoded.columns:
+            df_encoded[col] = 0
+
+    # Reorder columns to match model
+    df_encoded = df_encoded[MODEL_FEATURES]
+
+    return df_encoded.values
+
+# Health check
 @app.get("/")
 def home():
     return {"message": "Churn Prediction API Running"}
 
-# Health check endpoint (HEAD)
-@app.head("/")
-def health_check():
-    return PlainTextResponse("OK")
-
-# Prediction endpoint
+# Predict endpoint
 @app.post("/predict")
 def predict(data: dict):
     try:
-        # Make sure all features expected by the model are present
-        expected_features = [
-            "tenure", "MonthlyCharges", "TotalCharges", 
-            "gender", "SeniorCitizen", "Partner", "Dependents",
-            # add all other features here exactly as in training
-        ]
-        
-        # Fill missing features with 0 (or a default value)
-        input_values = [data.get(f, 0) for f in expected_features]
-
-        # Convert to numpy array and scale
-        values = np.array(input_values).reshape(1, -1)
-        scaled = scaler.transform(values) if scaler else values
-
-        pred = model.predict(scaled)[0]
-        prob = model.predict_proba(scaled)[0][1]
-
+        input_array = preprocess_input(data)
+        pred = model.predict(input_array)[0]
+        prob = model.predict_proba(input_array)[0][1]
         return {"prediction": int(pred), "probability": float(prob)}
-
     except Exception as e:
         return {"error": str(e)}
-
