@@ -23,17 +23,26 @@ def health_check():
 # Prediction endpoint
 @app.post("/predict")
 def predict(data: dict):
-    # Convert input data to numpy array
-    values = np.array(list(data.values())).reshape(1, -1)
+    try:
+        # Make sure all features expected by the model are present
+        expected_features = [
+            "tenure", "MonthlyCharges", "TotalCharges", 
+            "gender", "SeniorCitizen", "Partner", "Dependents",
+            # add all other features here exactly as in training
+        ]
+        
+        # Fill missing features with 0 (or a default value)
+        input_values = [data.get(f, 0) for f in expected_features]
 
-    # Scale if scaler exists
-    scaled = scaler.transform(values) if scaler else values
+        # Convert to numpy array and scale
+        values = np.array(input_values).reshape(1, -1)
+        scaled = scaler.transform(values) if scaler else values
 
-    # Make prediction
-    pred = model.predict(scaled)[0]
-    prob = model.predict_proba(scaled)[0][1]
+        pred = model.predict(scaled)[0]
+        prob = model.predict_proba(scaled)[0][1]
 
-    return {
-        "prediction": int(pred),
-        "probability": float(prob)
-    }
+        return {"prediction": int(pred), "probability": float(prob)}
+
+    except Exception as e:
+        return {"error": str(e)}
+
