@@ -9,7 +9,10 @@ app = FastAPI()
 model = joblib.load("rf_churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# List of model features after preprocessing (numeric + one-hot)
+# Numeric columns
+numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+
+# All model features after preprocessing (numeric + one-hot)
 model_features = ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges',
                   'gender_Male', 'Partner_Yes', 'Dependents_Yes', 'PhoneService_Yes',
                   'MultipleLines_No phone service', 'MultipleLines_Yes', 'InternetService_Fiber optic',
@@ -21,8 +24,6 @@ model_features = ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges',
                   'PaymentMethod_Credit card (automatic)', 'PaymentMethod_Electronic check',
                   'PaymentMethod_Mailed check']
 
-numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-
 @app.get("/")
 def home():
     return {"message": "Churn Prediction API Running"}
@@ -30,25 +31,30 @@ def home():
 @app.post("/predict")
 def predict(data: dict):
     try:
-        # Convert input dict to DataFrame
+        # Convert input to DataFrame
         input_df = pd.DataFrame([data])
 
-        # Scale numeric columns
+        # Scale only numeric columns
         for col in numeric_cols:
             if col in input_df:
-                input_df[col] = scaler.transform(input_df[[col]])
+                input_df[[col]] = scaler.transform(input_df[[col]])
 
-        # One-hot encode categorical features to match model_features
+        # One-hot encode categorical columns
         input_encoded = pd.get_dummies(input_df)
+
+        # Add missing columns from model_features
         for col in model_features:
             if col not in input_encoded.columns:
-                input_encoded[col] = 0  # Add missing columns
-        input_encoded = input_encoded[model_features]  # Reorder columns
+                input_encoded[col] = 0
+
+        # Reorder columns to match model
+        input_encoded = input_encoded[model_features]
 
         # Make prediction
         pred = model.predict(input_encoded)[0]
         prob = model.predict_proba(input_encoded)[0][1]
 
         return {"prediction": int(pred), "probability": float(prob)}
+
     except Exception as e:
         return {"error": str(e)}
