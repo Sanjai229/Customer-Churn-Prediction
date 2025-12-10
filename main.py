@@ -10,10 +10,9 @@ app = FastAPI()
 model = joblib.load("rf_churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# Define numeric and categorical features
 numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
 
-# All feature names used in the model during training
+# Columns exactly as used during training
 model_features = ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges', 
                   'gender_Male', 'Partner_Yes', 'Dependents_Yes', 'PhoneService_Yes',
                   'MultipleLines_No phone service', 'MultipleLines_Yes',
@@ -35,26 +34,26 @@ def health_check():
 @app.post("/predict")
 def predict(data: dict):
     try:
-        # Start with all zeros for all model features
-        df = pd.DataFrame(columns=model_features)
-        df.loc[0] = 0
+        # Create DataFrame with all zeros for all model features
+        df = pd.DataFrame([{col: 0 for col in model_features}])
 
-        # Fill numeric columns
+        # Fill numeric columns from input
         for col in numeric_cols:
             if col in data:
                 df[col] = data[col]
-        # Apply scaler correctly
+
+        # Scale numeric columns
         df[numeric_cols] = scaler.transform(df[numeric_cols])
 
-        # Fill categorical features (one-hot)
-        for feature in model_features:
-            if feature in data:
-                df[feature] = 1
+        # Fill categorical columns from input
+        for col in model_features:
+            if col in data:
+                df[col] = 1
 
-        # Ensure correct column order
+        # Ensure column order matches model_features
         df = df[model_features]
 
-        # Prediction
+        # Make prediction
         pred = model.predict(df)[0]
         prob = model.predict_proba(df)[0][1]
 
