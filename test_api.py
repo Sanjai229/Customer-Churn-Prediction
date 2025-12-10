@@ -2,35 +2,30 @@ import requests
 
 url = "https://customer-churn-prediction-2r5b.onrender.com/predict"
 
-# Example input (19 features, match your model training)
+# Sample input
 data = {
-    "gender": "Male",
     "SeniorCitizen": 0,
-    "Partner": "No",
-    "Dependents": "No",
     "tenure": 12,
+    "MonthlyCharges": 75.5,
+    "TotalCharges": 910.5,
+    "gender": "Male",
+    "Partner": "Yes",
+    "Dependents": "No",
     "PhoneService": "Yes",
     "MultipleLines": "No",
-    "InternetService": "DSL",
+    "InternetService": "Fiber optic",
     "OnlineSecurity": "No",
-    "OnlineBackup": "No",
+    "OnlineBackup": "Yes",
     "DeviceProtection": "No",
     "TechSupport": "No",
-    "StreamingTV": "No",
+    "StreamingTV": "Yes",
     "StreamingMovies": "No",
-    "Contract": "Month-to-month",
+    "Contract": "One year",
     "PaperlessBilling": "Yes",
-    "PaymentMethod": "Electronic check",
-    "MonthlyCharges": 75.5,
-    "TotalCharges": 910.5
+    "PaymentMethod": "Electronic check"
 }
 
 response = requests.post(url, json=data)
 
 print("Status code:", response.status_code)
-print("Response text:", response.text)
-
-if response.status_code == 200:
-    print("JSON response:", response.json())
-else:
-    print("Failed to get valid response")
+print("Response:", response.json())
