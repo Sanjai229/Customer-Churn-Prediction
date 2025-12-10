@@ -25,11 +25,13 @@ MODEL_FEATURES = [
 
 # Preprocess function
 def preprocess_input(data: dict):
-    # Convert categorical features to one-hot manually
     df = pd.DataFrame([data])
 
-    # Scale numeric columns
+    # Ensure numeric columns are floats
     numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    df[numeric_cols] = df[numeric_cols].astype(float)
+
+    # Scale numeric columns
     df[numeric_cols] = scaler.transform(df[numeric_cols])
 
     # One-hot encode categorical columns (using same names as MODEL_FEATURES)
@@ -44,6 +46,7 @@ def preprocess_input(data: dict):
     df_encoded = df_encoded[MODEL_FEATURES]
 
     return df_encoded.values
+
 
 # Health check
 @app.get("/")
