@@ -3,9 +3,13 @@
 <head>
   <title>Customer Churn Prediction</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: auto; }
-    input, select { width: 100%; padding: 10px; margin: 8px 0; }
-    button { padding: 10px; width: 100%; background: black; color: white; border: none; }
+    body { font-family: Arial; max-width: 600px; margin: auto; padding: 20px; }
+    h2 { text-align: center; }
+    input, select { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+    button { padding: 10px; width: 100%; background: black; color: white; border: none; cursor: pointer; }
+    button:hover { background: #333; }
+    .result { background: #f0f0f0; padding: 15px; margin-top: 20px; border-radius: 5px; }
+    .error { color: red; }
   </style>
 </head>
 <body>
@@ -13,39 +17,38 @@
 <h2>Customer Churn Prediction</h2>
 
 <form action="/predict_form" method="post">
-
     <label>Senior Citizen (0 = No, 1 = Yes)</label>
-    <input type="number" name="SeniorCitizen" required>
+    <input type="number" name="SeniorCitizen" min="0" max="1" required>
 
-    <label>Tenure</label>
-    <input type="number" name="tenure" required>
+    <label>Tenure (in months)</label>
+    <input type="number" name="tenure" min="0" required>
 
     <label>Monthly Charges</label>
-    <input type="number" name="MonthlyCharges" required>
+    <input type="number" name="MonthlyCharges" step="0.01" min="0" required>
 
     <label>Total Charges</label>
-    <input type="number" name="TotalCharges" required>
+    <input type="number" name="TotalCharges" step="0.01" min="0" required>
 
     <label>Gender</label>
-    <select name="gender">
+    <select name="gender" required>
         <option value="Male">Male</option>
         <option value="Female">Female</option>
     </select>
 
     <label>Partner</label>
-    <select name="Partner">
+    <select name="Partner" required>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
     </select>
 
     <label>Dependents</label>
-    <select name="Dependents">
+    <select name="Dependents" required>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
     </select>
 
     <label>Paperless Billing</label>
-    <select name="PaperlessBilling">
+    <select name="PaperlessBilling" required>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
     </select>
@@ -53,9 +56,16 @@
     <button type="submit">Predict</button>
 </form>
 
+<!-- Show prediction result -->
 {% if prediction is defined %}
-<h3>Prediction: {{ prediction }} </h3>
-<h4>Probability of churn: {{ probability }} </h4>
+<div class="result">
+    <h3>Prediction: {% if prediction == 1 %}Customer will churn{% else %}Customer will stay{% endif %}</h3>
+    <p>Probability of churn: {{ probability }}</p>
+</div>
+{% elif error is defined %}
+<div class="result error">
+    <h3>Error: {{ error }}</h3>
+</div>
 {% endif %}
 
 </body>

@@ -11,7 +11,6 @@ templates = Jinja2Templates(directory="templates")
 model = joblib.load("rf_churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# Features in exact order
 model_features = [
     'SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges', 'gender_Male',
     'Partner_Yes', 'Dependents_Yes', 'PhoneService_Yes',
@@ -28,49 +27,92 @@ model_features = [
     'PaymentMethod_Mailed check'
 ]
 
-# Root endpoint serves HTML form
+# Home page
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Form submission endpoint
+
+# JSON prediction endpoint (for API)
+@app.post("/predict")
+def predict(data: dict):
+    try:
+        input_df = pd.DataFrame(columns=model_features)
+        input_df.loc[0] = 0
+
+        # Numeric features
+        for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
+            if col in data:
+                input_df[col] = data[col]
+
+        # Categorical features
+        for col in data:
+            if col in model_features and col not in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
+                input_df[col] = 1
+
+        # Scale numeric columns
+        input_df[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(
+            input_df[['tenure', 'MonthlyCharges', 'TotalCharges']]
+        )
+
+        pred = model.predict(input_df)[0]
+        prob = model.predict_proba(input_df)[0][1]
+
+        return {"prediction": int(pred), "probability": float(prob)}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# Form submission endpoint (for HTML)
 @app.post("/predict_form", response_class=HTMLResponse)
-async def predict_form(request: Request):
-    form = await request.form()
-    data = dict(form)
+def predict_form(
+    request: Request,
+    SeniorCitizen: int = Form(...),
+    tenure: float = Form(...),
+    MonthlyCharges: float = Form(...),
+    TotalCharges: float = Form(...),
+    gender: str = Form(...),
+    Partner: str = Form(...),
+    Dependents: str = Form(...),
+    PaperlessBilling: str = Form(...)
+):
+    try:
+        input_df = pd.DataFrame(columns=model_features)
+        input_df.loc[0] = 0
 
-    # Convert numeric fields
-    for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
-        data[col] = float(data[col])
+        # Numeric features
+        input_df['SeniorCitizen'] = SeniorCitizen
+        input_df['tenure'] = tenure
+        input_df['MonthlyCharges'] = MonthlyCharges
+        input_df['TotalCharges'] = TotalCharges
 
-    # Create input DataFrame
-    input_df = pd.DataFrame(columns=model_features)
-    input_df.loc[0] = 0
+        # Categorical features mapping to model columns
+        if gender == "Male":
+            input_df['gender_Male'] = 1
+        if Partner == "Yes":
+            input_df['Partner_Yes'] = 1
+        if Dependents == "Yes":
+            input_df['Dependents_Yes'] = 1
+        if PaperlessBilling == "Yes":
+            input_df['PaperlessBilling_Yes'] = 1
 
-    # Fill numeric
-    for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
-        input_df[col] = data[col]
+        # Scale numeric columns
+        input_df[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(
+            input_df[['tenure', 'MonthlyCharges', 'TotalCharges']]
+        )
 
-    # Fill categorical
-    if data.get('gender') == 'Male':
-        input_df['gender_Male'] = 1
-    if data.get('Partner') == 'Yes':
-        input_df['Partner_Yes'] = 1
-    if data.get('Dependents') == 'Yes':
-        input_df['Dependents_Yes'] = 1
-    if data.get('PaperlessBilling') == 'Yes':
-        input_df['PaperlessBilling_Yes'] = 1
+        pred = model.predict(input_df)[0]
+        prob = model.predict_proba(input_df)[0][1]
 
-    # Scale numeric
-    input_df[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(
-        input_df[['tenure', 'MonthlyCharges', 'TotalCharges']]
-    )
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "prediction": int(pred),
+            "probability": round(float(prob), 2)
+        })
 
-    # Predict
-    pred = model.predict(input_df)[0]
-    prob = model.predict_proba(input_df)[0][1]
-
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "prediction": int(pred), "probability": float(prob)}
-    )
+    except Exception as e:
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "error": str(e)
+        })
