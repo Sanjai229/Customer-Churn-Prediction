@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Customer Churn Prediction</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: auto; }
+    input, select { width: 100%; padding: 10px; margin: 8px 0; }
+    button { padding: 10px; width: 100%; background: black; color: white; border: none; }
+  </style>
+</head>
+<body>
+
+<h2>Customer Churn Prediction</h2>
+
+<form action="/predict_form" method="post">
+
+    <label>Senior Citizen (0 = No, 1 = Yes)</label>
+    <input type="number" name="SeniorCitizen" required>
+
+    <label>Tenure</label>
+    <input type="number" name="tenure" required>
+
+    <label>Monthly Charges</label>
+    <input type="number" name="MonthlyCharges" required>
+
+    <label>Total Charges</label>
+    <input type="number" name="TotalCharges" required>
+
+    <label>Gender</label>
+    <select name="gender">
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+    </select>
+
+    <label>Partner</label>
+    <select name="Partner">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+    </select>
+
+    <label>Dependents</label>
+    <select name="Dependents">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+    </select>
+
+    <label>Paperless Billing</label>
+    <select name="PaperlessBilling">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+    </select>
+
+    <button type="submit">Predict</button>
+</form>
+
+</body>
+</html>
