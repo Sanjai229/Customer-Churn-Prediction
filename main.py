@@ -5,6 +5,11 @@ import joblib
 
 app = FastAPI()
 
+@app.get("/")
+def home():
+    return {"message": "Churn prediction API running!"}
+
+
 # Load model and scaler
 model = joblib.load("rf_churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
