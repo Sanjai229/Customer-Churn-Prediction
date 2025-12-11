@@ -1,20 +1,17 @@
-import numpy as np
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 import pandas as pd
-from fastapi import FastAPI
 import joblib
 
 app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message": "Churn prediction API running!"}
-
+templates = Jinja2Templates(directory="templates")
 
 # Load model and scaler
 model = joblib.load("rf_churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# Define all features in the exact same order as training
+# Features in exact order
 model_features = [
     'SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges', 'gender_Male',
     'Partner_Yes', 'Dependents_Yes', 'PhoneService_Yes',
@@ -31,33 +28,49 @@ model_features = [
     'PaymentMethod_Mailed check'
 ]
 
-@app.post("/predict")
-def predict(data: dict):
-    try:
-        # Create a DataFrame with all features
-        input_df = pd.DataFrame(columns=model_features)
-        input_df.loc[0] = 0  # default all zeros
+# Root endpoint serves HTML form
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-        # Fill numeric features
-        for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
-            if col in data:
-                input_df[col] = data[col]
+# Form submission endpoint
+@app.post("/predict_form", response_class=HTMLResponse)
+async def predict_form(request: Request):
+    form = await request.form()
+    data = dict(form)
 
-        # Fill categorical features with one-hot encoding
-        for col in data:
-            if col in model_features and col not in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
-                input_df[col] = 1
+    # Convert numeric fields
+    for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
+        data[col] = float(data[col])
 
-        # Scale numeric columns
-        input_df[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(
-            input_df[['tenure', 'MonthlyCharges', 'TotalCharges']]
-        )
+    # Create input DataFrame
+    input_df = pd.DataFrame(columns=model_features)
+    input_df.loc[0] = 0
 
-        # Predict
-        pred = model.predict(input_df)[0]
-        prob = model.predict_proba(input_df)[0][1]
+    # Fill numeric
+    for col in ['SeniorCitizen', 'tenure', 'MonthlyCharges', 'TotalCharges']:
+        input_df[col] = data[col]
 
-        return {"prediction": int(pred), "probability": float(prob)}
+    # Fill categorical
+    if data.get('gender') == 'Male':
+        input_df['gender_Male'] = 1
+    if data.get('Partner') == 'Yes':
+        input_df['Partner_Yes'] = 1
+    if data.get('Dependents') == 'Yes':
+        input_df['Dependents_Yes'] = 1
+    if data.get('PaperlessBilling') == 'Yes':
+        input_df['PaperlessBilling_Yes'] = 1
 
-    except Exception as e:
-        return {"error": str(e)}
+    # Scale numeric
+    input_df[['tenure', 'MonthlyCharges', 'TotalCharges']] = scaler.transform(
+        input_df[['tenure', 'MonthlyCharges', 'TotalCharges']]
+    )
+
+    # Predict
+    pred = model.predict(input_df)[0]
+    prob = model.predict_proba(input_df)[0][1]
+
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "prediction": int(pred), "probability": float(prob)}
+    )
